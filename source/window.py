@@ -3,7 +3,7 @@
 # window.py
 
 import tkinter as tk
-import os
+
 
 class Window(tk.Frame):
     def __init__(self, parent):
@@ -35,4 +35,4 @@ class Window(tk.Frame):
                                               relief='flat')) # Add a new space on board for current (y, x)
 
                 self.grid[y][x].create_image(0, 0, image = self.blank, anchor='nw') # Add placeholder
-                self.grid[y][x].grid(row = y, column = x) 
+                self.grid[y][x].grid(row = y, column = x)
