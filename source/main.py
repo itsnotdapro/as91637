@@ -9,7 +9,9 @@ def run(name):
     root = Tk()
     root.title(name)
     root.resizable(False, False)
-    root.geometry("800x600")
+    root.tk_setPalette(background="#eeeeee")
+    root.geometry("800x565")
+
     app = Window(root)
 
     root.mainloop()
