@@ -8,10 +8,16 @@ class Game:
         self.player1 = player1
         self.player2 = player2
 
-        self.turn = 1
-        self.pool = 10000000
+        self.turn = 1 # 1 == orange, -1 == red
+        self.pool = 0
+
+        self.board = [[],[],[],[],[],[]]
+        for y in range(6):
+            for x in range(7): self.board[y].append(0)
 
 
 
 class Player:
-    pass
+    def __init__(self, name, cash):
+        self.name = name
+        self.cash = cash

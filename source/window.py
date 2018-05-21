@@ -3,11 +3,16 @@
 # window.py
 
 import tkinter as tk
-from logic import Game
+from logic import Game, Player
+import sqlite3
+
 
 class Window(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent)
+
+        self.player1 = Player("Playerholder", 420)
+        self.player2 = Player("Computer", 420)
 
         # Image Decleration
         self.blank = tk.PhotoImage(file = "source/img/placeholdergrey.gif") # Placeholder
@@ -18,7 +23,7 @@ class Window(tk.Frame):
         self.showorange = tk.PhotoImage(file = "source/img/showorange.gif") # Orange Top Button
         self.header = tk.PhotoImage(file = "source/img/header.gif") # Header
 
-        self.game = Game("One", "Two")
+        self.game = Game(player1, player2)
 
         canvas = tk.Canvas(width=800, highlightthickness=0, relief='ridge')
         canvas.create_image(0, 0, image = self.header, anchor="nw") # Add header image to canvas
@@ -40,6 +45,10 @@ class Window(tk.Frame):
         self.round_rectangle(self.player1info, 7, 7, 167, 97, r=10, fill="#FF5300")
         self.player1info.place(x=600, y=330)
         self.player1frame = tk.Frame(bg = "#FF5300")
+        self.player1name = tk.Label(self.player1frame, bg="#FF5300", text="player1")
+        self.player1name.pack()
+        self.player1cash = tk.Label(self.player1frame, bg="#FF5300", text="$0")
+        self.player1cash.pack()
         self.player1info.create_window((85, 25), window = self.player1frame, anchor = 'n')
 
         ## CREATE PLAYER 1 INFO ##
@@ -48,6 +57,10 @@ class Window(tk.Frame):
         self.round_rectangle(self.player2info, 7, 7, 167, 97, r=10, fill="#FF0900")
         self.player2info.place(x=600, y=445)
         self.player2frame = tk.Frame(bg = "#FF0900")
+        self.player2name = tk.Label(self.player2frame, bg="#FF0900", text="player2")
+        self.player2name.pack()
+        self.player2cash = tk.Label(self.player2frame, bg="#FF0900", text="$0")
+        self.player2cash.pack()
         self.player2info.create_window((85, 25), window = self.player2frame, anchor = 'n')
 
         board_back = tk.Canvas(width = 570, height = 480) # Back canvas behind playing board makes a black outline
@@ -78,11 +91,22 @@ class Window(tk.Frame):
 
     ## END OF INITILISATION ##
 
+        self.disable()
+
+    def play(self):
+
+        self.game.turn *= -1
+
     def change_on_enter(self, event):
         if self.game.turn == 1: event.widget.create_image(0, 0, image = self.showorange, anchor='nw')
-        if self.game.turn == 2: event.widget.create_image(0, 0, image = self.showred, anchor='nw')
+        if self.game.turn == -1: event.widget.create_image(0, 0, image = self.showred, anchor='nw')
 
     def change_on_leave(self, event): event.widget.create_image(0, 0, image = self.show, anchor='nw')
+
+    def disable(self):
+        self.disableframe = tk.Canvas(width=590, height = 450, bg="black")
+        self.disableframe.create_text(300, 230, fill="white", text="New Game", font=("Verdana", 27, "bold"))
+        self.disableframe.place(x = 0, y = 110)
 
     def round_rectangle(self, canvas, x1, y1, x2, y2, r=25, **kwargs): # Thanks to SneakyTurtle on stackoverflow for this one.
         points = (x1+r, y1, x1+r, y1, x2-r, y1, x2-r, y1, x2, y1, x2, y1+r, x2, y1+r, x2, y2-r, x2, y2-r, x2, y2, x2-r, y2, x2-r, y2, x1+r, y2, x1+r, y2, x1, y2, x1, y2-r, x1, y2-r, x1, y1+r, x1, y1+r, x1, y1)
