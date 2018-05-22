@@ -4,6 +4,7 @@
 
 import tkinter as tk
 from logic import Game, Player
+from functools import partial
 import sqlite3
 
 
@@ -23,8 +24,6 @@ class Window(tk.Frame):
         self.showorange = tk.PhotoImage(file = "source/img/showorange.gif") # Orange Top Button
         self.header = tk.PhotoImage(file = "source/img/header.gif") # Header
 
-        self.game = Game(player1, player2)
-
         canvas = tk.Canvas(width=800, highlightthickness=0, relief='ridge')
         canvas.create_image(0, 0, image = self.header, anchor="nw") # Add header image to canvas
         canvas.place(x=0, y=0) # Header canvas
@@ -36,7 +35,7 @@ class Window(tk.Frame):
         self.pool.place(x=600, y=170)
         self.poolframe = tk.Frame(bg = "#777777")
         tk.Label(self.poolframe, text="POOL", bg = "#777777", font=("Verdana", 25, "bold")).pack()
-        self.poollabel = tk.Label(self.poolframe, bg = "#777777", text=("$" + str(self.game.pool)), font=("Verdana", 12)).pack(pady=20)
+        self.poollabel = tk.Label(self.poolframe, bg = "#777777", text=("$0"), font=("Verdana", 12)).pack(pady=20)
         self.pool.create_window((85, 25), window = self.poolframe, anchor = 'n')
 
         ## CREATE PLAYER 1 INFO ##
@@ -45,9 +44,9 @@ class Window(tk.Frame):
         self.round_rectangle(self.player1info, 7, 7, 167, 97, r=10, fill="#FF5300")
         self.player1info.place(x=600, y=330)
         self.player1frame = tk.Frame(bg = "#FF5300")
-        self.player1name = tk.Label(self.player1frame, bg="#FF5300", text="player1")
+        self.player1name = tk.Label(self.player1frame, bg="#FF5300", text=self.player1.name)
         self.player1name.pack()
-        self.player1cash = tk.Label(self.player1frame, bg="#FF5300", text="$0")
+        self.player1cash = tk.Label(self.player1frame, bg="#FF5300", text="$" + str(self.player1.cash))
         self.player1cash.pack()
         self.player1info.create_window((85, 25), window = self.player1frame, anchor = 'n')
 
@@ -57,9 +56,9 @@ class Window(tk.Frame):
         self.round_rectangle(self.player2info, 7, 7, 167, 97, r=10, fill="#FF0900")
         self.player2info.place(x=600, y=445)
         self.player2frame = tk.Frame(bg = "#FF0900")
-        self.player2name = tk.Label(self.player2frame, bg="#FF0900", text="player2")
+        self.player2name = tk.Label(self.player2frame, bg="#FF0900", text=self.player2.name)
         self.player2name.pack()
-        self.player2cash = tk.Label(self.player2frame, bg="#FF0900", text="$0")
+        self.player2cash = tk.Label(self.player2frame, bg="#FF0900", text="$" + str(self.player2.cash))
         self.player2cash.pack()
         self.player2info.create_window((85, 25), window = self.player2frame, anchor = 'n')
 
@@ -84,6 +83,7 @@ class Window(tk.Frame):
 
                 if y == 0:
                     self.grid[y][x].create_image(0, 0, image = self.show, anchor='nw') # Add top buttons
+                    self.grid[y][x].bind("<Button-1>", partial(self.play, x))
                     self.grid[y][x].bind("<Enter>", self.change_on_enter) # Change image on cursor hover enter
                     self.grid[y][x].bind("<Leave>", self.change_on_leave) # Change image on cursor hover leave
                 else: self.grid[y][x].create_image(0, 1, image = self.blank, anchor='nw') # Add placeholder
@@ -93,9 +93,24 @@ class Window(tk.Frame):
 
         self.disable()
 
-    def play(self):
+    def start_game(self, event):
+        self.game = Game(self.player1, self.player2)
+        self.enable()
 
+
+    def play(self, space, event):
+        self.game.play(space)
+        for space in self.game.board: print(space)
         self.game.turn *= -1
+
+        self.update()
+
+    def update(self):
+        for y, li in enumerate(self.game.board):
+            for x, space in enumerate (li):
+                if self.game.board[y][x] == 1: self.grid[y+1][x].create_image(0,0, image=self.orange, anchor="nw")
+                if self.game.board[y][x] == -1: self.grid[y+1][x].create_image(0,0, image=self.red, anchor="nw")
+        self.turn = self.game.turn
 
     def change_on_enter(self, event):
         if self.game.turn == 1: event.widget.create_image(0, 0, image = self.showorange, anchor='nw')
@@ -105,8 +120,12 @@ class Window(tk.Frame):
 
     def disable(self):
         self.disableframe = tk.Canvas(width=590, height = 450, bg="black")
+        self.disableframe.bind("<Button-1>", self.start_game)
         self.disableframe.create_text(300, 230, fill="white", text="New Game", font=("Verdana", 27, "bold"))
         self.disableframe.place(x = 0, y = 110)
+
+    def enable(self):
+        self.disableframe.destroy()
 
     def round_rectangle(self, canvas, x1, y1, x2, y2, r=25, **kwargs): # Thanks to SneakyTurtle on stackoverflow for this one.
         points = (x1+r, y1, x1+r, y1, x2-r, y1, x2-r, y1, x2, y1, x2, y1+r, x2, y1+r, x2, y2-r, x2, y2-r, x2, y2, x2-r, y2, x2-r, y2, x1+r, y2, x1+r, y2, x1, y2, x1, y2-r, x1, y2-r, x1, y1+r, x1, y1+r, x1, y1)
