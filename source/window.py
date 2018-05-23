@@ -3,7 +3,7 @@
 # window.py
 
 import tkinter as tk
-from logic import Game, Player
+from logic import Game, Player, PlayerList
 from functools import partial
 import sqlite3
 
@@ -12,8 +12,23 @@ class Window(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent)
 
-        self.player1 = Player("Playerholder", 420)
-        self.player2 = Player("Computer", 420)
+        db = sqlite3.connect('source/data/playertable')
+        cursor = db.cursor()
+        cursor.execute('SELECT name, cash FROM players')
+        data = cursor.fetchall()
+        print(data)
+        db.commit()
+        db.close()
+
+        self.playerlist = PlayerList()
+
+        for item in data:
+            player = Player(item[0], item[1])
+            self.playerlist.li[item[0]] = player
+        print(self.playerlist.li)
+
+        self.player1 = self.playerlist.li["Playerholder"]
+        self.player2 = self.playerlist.li["Computer"]
 
         # Image Decleration
         self.blank = tk.PhotoImage(file = "source/img/placeholdergrey.gif") # Placeholder
@@ -35,7 +50,8 @@ class Window(tk.Frame):
         self.pool.place(x=600, y=170)
         self.poolframe = tk.Frame(bg = "#777777")
         tk.Label(self.poolframe, text="POOL", bg = "#777777", font=("Verdana", 25, "bold")).pack()
-        self.poollabel = tk.Label(self.poolframe, bg = "#777777", text=("$0"), font=("Verdana", 12)).pack(pady=20)
+        self.poollabel = tk.Label(self.poolframe, bg = "#777777", text=("$0"), font=("Verdana", 12))
+        self.poollabel.pack(pady=20)
         self.pool.create_window((85, 25), window = self.poolframe, anchor = 'n')
 
         ## CREATE PLAYER 1 INFO ##
@@ -95,21 +111,40 @@ class Window(tk.Frame):
 
     def start_game(self, event):
         self.game = Game(self.player1, self.player2)
+        for i, space in enumerate(self.game.board):
+            self.game.board[i] = [0, 0, 0, 0, 0, 0, 0]
+        self.update()
         self.enable()
 
 
     def play(self, space, event):
-        self.game.play(space)
-        for space in self.game.board: print(space)
-        self.game.turn *= -1
+        if self.game.play(space):
+            for space in self.game.board: print(space)
+            if self.game.check():
+                self.end_game()
+            self.game.turn *= -1
+            self.update()
 
-        self.update()
+    def end_game(self):
+        if self.turn == 1: self.game.player1.cash += self.game.pool
+        if self.turn == -1: self.game.player2.cash += self.game.pool
+
+        db = sqlite3.connect('source/data/playertable')
+        cursor = db.cursor()
+        for key, value in self.playerlist.li.items():
+            cursor.execute('UPDATE players SET cash = {} WHERE name = {}'.format(value.cash, value.name))
+        db.commit()
+        db.close()
+        self.start_game()
 
     def update(self):
         for y, li in enumerate(self.game.board):
-            for x, space in enumerate (li):
+            for x, space in enumerate(li):
                 if self.game.board[y][x] == 1: self.grid[y+1][x].create_image(0,0, image=self.orange, anchor="nw")
                 if self.game.board[y][x] == -1: self.grid[y+1][x].create_image(0,0, image=self.red, anchor="nw")
+        self.player1cash.config(text="$" + str(self.game.player1.cash))
+        self.player2cash.config(text="$" + str(self.game.player2.cash))
+        self.poollabel.config(text="$" + str(self.game.pool))
         self.turn = self.game.turn
 
     def change_on_enter(self, event):

@@ -7,14 +7,6 @@ from window import Window
 import sqlite3
 
 def run(name):
-    db = sqlite3.connect('source/data/playertable')
-    cursor = db.cursor()
-    cursor.execute('SELECT name, cash FROM players')
-    data = cursor.fetchall()
-    print(data)
-    db.commit()
-    db.close()
-
     root = Tk()
     root.title(name)
     root.resizable(False, False)
