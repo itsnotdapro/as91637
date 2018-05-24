@@ -3,6 +3,7 @@
 # logic.py
 
 import itertools as iterate
+from random import randint as rand
 
 class Game:
     def __init__(self, player1, player2):
@@ -17,6 +18,7 @@ class Game:
             for x in range(7): self.board[y].append(0)
 
     def play(self, space): # will return true if play was succesfull
+        if self.turn == -1 and self.player2.name == "Computer": space = self.ai_play()
         for i, item in reversed(list(enumerate(self.board))):
             print(i, item)
             if item[space] == 0:
@@ -27,6 +29,14 @@ class Game:
                 return True
             continue
         return False
+
+    def ai_play(self):
+
+        for col in self.board:
+            for i in col:
+                margin = rand(-1, 1)
+                if i == self.turn: return i + margin
+        return rand(0, 6)
 
     def check(self):
         # set the hor and ver values
@@ -53,11 +63,6 @@ class Game:
                         except IndexError: continue # if run to end of table, move to next value
         return False # if all values are checked, and not returned True, return False
 
-
-
-class PlayerList:
-    def __init__(self):
-        self.li = {}
 
 class Player:
     def __init__(self, name, cash):

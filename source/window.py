@@ -3,7 +3,7 @@
 # window.py
 
 import tkinter as tk
-from logic import Game, Player, PlayerList
+from logic import Game, Player
 from functools import partial
 import sqlite3
 
@@ -20,15 +20,15 @@ class Window(tk.Frame):
         db.commit()
         db.close()
 
-        self.playerlist = PlayerList()
+        self.playerlist = {}
 
         for item in data:
             player = Player(item[0], item[1])
-            self.playerlist.li[item[0]] = player
-        print(self.playerlist.li)
+            self.playerlist[item[0]] = player
+        print(self.playerlist)
 
-        self.player1 = self.playerlist.li["Playerholder"]
-        self.player2 = self.playerlist.li["Computer"]
+        self.player1 = self.playerlist["Playerholder"]
+        self.player2 = self.playerlist["Computer"]
 
         # Image Decleration
         self.blank = tk.PhotoImage(file = "source/img/placeholdergrey.gif") # Placeholder
@@ -55,25 +55,32 @@ class Window(tk.Frame):
         self.pool.create_window((85, 25), window = self.poolframe, anchor = 'n')
 
         ## CREATE PLAYER 1 INFO ##
+        self.player1name = tk.StringVar(parent)
+        self.player1name.set(self.player1.name)
+        self.player1name.trace('w', self.update_player_1)
         self.player1info = tk.Canvas(width = 170, height = 150)
         self.round_rectangle(self.player1info, 4, 4, 170, 100, r=10, fill="#7F2A00")
         self.round_rectangle(self.player1info, 7, 7, 167, 97, r=10, fill="#FF5300")
         self.player1info.place(x=600, y=330)
         self.player1frame = tk.Frame(bg = "#FF5300")
-        self.player1name = tk.Label(self.player1frame, bg="#FF5300", text=self.player1.name)
-        self.player1name.pack()
+        #self.player1name = tk.Label(self.player1frame, bg="#FF5300", text=self.player1.name)
+        self.player1namedown = tk.OptionMenu(self.player1frame, self.player1name, *self.playerlist.keys())
+        self.player1namedown.pack()
         self.player1cash = tk.Label(self.player1frame, bg="#FF5300", text="$" + str(self.player1.cash))
         self.player1cash.pack()
         self.player1info.create_window((85, 25), window = self.player1frame, anchor = 'n')
 
-        ## CREATE PLAYER 1 INFO ##
+        ## CREATE PLAYER 2 INFO ##
+        self.player2name = tk.StringVar(parent)
+        self.player2name.set(self.player2.name)
+        self.player2name.trace('w', self.update_player_2)
         self.player2info = tk.Canvas(width = 170, height = 150)
         self.round_rectangle(self.player2info, 4, 4, 170, 100, r=10, fill="#650400")
         self.round_rectangle(self.player2info, 7, 7, 167, 97, r=10, fill="#FF0900")
         self.player2info.place(x=600, y=445)
         self.player2frame = tk.Frame(bg = "#FF0900")
-        self.player2name = tk.Label(self.player2frame, bg="#FF0900", text=self.player2.name)
-        self.player2name.pack()
+        self.player2namedown = tk.OptionMenu(self.player2frame, self.player2name, *self.playerlist.keys())
+        self.player2namedown.pack()
         self.player2cash = tk.Label(self.player2frame, bg="#FF0900", text="$" + str(self.player2.cash))
         self.player2cash.pack()
         self.player2info.create_window((85, 25), window = self.player2frame, anchor = 'n')
@@ -110,6 +117,7 @@ class Window(tk.Frame):
         self.disable()
 
     def start_game(self, event):
+        if self.player1name.get() == "Already Chosen!" or self.player2name.get() == "Already Chosen!": return
         self.game = Game(self.player1, self.player2)
         for i, space in enumerate(self.game.board):
             self.game.board[i] = [0, 0, 0, 0, 0, 0, 0]
@@ -132,10 +140,20 @@ class Window(tk.Frame):
         db = sqlite3.connect('source/data/playertable')
         cursor = db.cursor()
         for key, value in self.playerlist.li.items():
-            cursor.execute('UPDATE players SET cash = {} WHERE name = {}'.format(value.cash, value.name))
+            cursor.execute("UPDATE players SET cash = {} WHERE name = '{}'".format(value.cash, value.name))
         db.commit()
         db.close()
-        self.start_game()
+        self.update()
+        self.start_game(event=None)
+
+    def update_player_1(self, *args):
+        if self.player1name.get() == self.player2name.get():
+            self.player1name.set("Already Chosen!")
+            return
+        self.player1 = self.playerlist[self.player1name.get()]
+        self.player1cash.config(text="$" + str(self.player1.cash))
+
+    def update_player_2(self, *args): pass
 
     def update(self):
         for y, li in enumerate(self.game.board):
@@ -146,6 +164,8 @@ class Window(tk.Frame):
         self.player2cash.config(text="$" + str(self.game.player2.cash))
         self.poollabel.config(text="$" + str(self.game.pool))
         self.turn = self.game.turn
+
+    # STYLING STUFF #
 
     def change_on_enter(self, event):
         if self.game.turn == 1: event.widget.create_image(0, 0, image = self.showorange, anchor='nw')
